@@ -1,0 +1,28 @@
+# Docker Compose para PostgreSQL
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: 
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "127.0.0.1:5433:5432"
+    volumes:
+          - ./db/01_schema.sql:/docker-entrypoint-initdb.d/01_schema.sql:ro
+          - ./db/02_seed.sql:/docker-entrypoint-initdb.d/02_seed.sql:ro
+          - ./db/03_reports_vw.sql:/docker-entrypoint-initdb.d/03_reports_vw.sql:ro
+          - ./db/04_indexes.sql:/docker-entrypoint-initdb.d/04_indexes.sql:ro
+          - ./db/05_roles.sql:/docker-entrypoint-initdb.d/05_roles.sql:ro
+          - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
