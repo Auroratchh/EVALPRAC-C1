@@ -7,8 +7,8 @@ DROP TABLE IF EXISTS fines CASCADE;
 CREATE TABLE members (
     id SERIAL PRIMARY KEY,
     name VARCHAR (100) NOT NULL,
-    email  VARCHAR(255) NOT NULL,
-    member_type VARCHAR (100) NOT NULL DEFAULT 'Regular',
+    email  VARCHAR(255) NOT NULL UNIQUE,
+    member_type VARCHAR (100) NOT NULL DEFAULT 'regular',
         CHECK (member_type IN ('regular', 'inactivo', 'activo')),
     joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -18,15 +18,15 @@ CREATE TABLE books (
     title VARCHAR (100) NOT NULL, 
     author VARCHAR(100) NOT NULL, 
     category VARCHAR(100) NOT NULL, 
-    isbn VARCHAR(13) UNIQUE, 
+    isbn VARCHAR(13) UNIQUE
 );
 
 CREATE TABLE copies (
     id SERIAL PRIMARY KEY,
     book_id INTEGER NOT NULL REFERENCES books(id) ON DELETE RESTRICT,
     barcode VARCHAR(100) NOT NULL,
-    status VARCHAR(20) NOT NULL DEFAULT 'prestado' 
-        CHECK (status IN ('prestado', 'perdido', 'existente')),
+    status VARCHAR(20) NOT NULL DEFAULT 'disponible' 
+        CHECK (status IN ('disponible', 'perdido', 'prestado'))
 );
 
 CREATE TABLE loans (
@@ -34,13 +34,13 @@ CREATE TABLE loans (
     copy_id  INTEGER NOT NULL REFERENCES copies(id) ON DELETE RESTRICT,
     member_id INTEGER NOT NULL REFERENCES members(id) ON DELETE RESTRICT,
     loaned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    due_at TIMESTAMP DEFAULT,
-    returned_at TIMESTAMP DEFAULT
+    due_at TIMESTAMP NOT NULL,
+    returned_at TIMESTAMP
 );
 
 CREATE TABLE fines (
     id SERIAL PRIMARY KEY,
     loan_id INTEGER NOT NULL REFERENCES loans(id) ON DELETE RESTRICT,
-    amount,
-    paid_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    amount NUMERIC(10, 2) NOT NULL DEFAULT 0.00,
+    paid_at TIMESTAMP 
 );
