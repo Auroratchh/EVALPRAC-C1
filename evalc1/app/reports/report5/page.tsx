@@ -22,23 +22,10 @@ export default async function Report5Page() {
       </div>
 
       <div className="kpi-grid">
-        <KPICard 
-          title="Total Copias" 
-          value={totalCopies} 
-        />
-        <KPICard 
-          title="Disponibles" 
-          value={totalAvailable} 
-        />
-        <KPICard 
-          title="En Préstamo" 
-          value={totalOnLoan} 
-        />
-        <KPICard 
-          title="Perdidos" 
-          value={totalLost} 
-          subtitle="requiere atención"
-        />
+        <KPICard title="Total Copias" value={totalCopies} />
+        <KPICard title="Disponibles" value={totalAvailable} />
+        <KPICard title="En Préstamo" value={totalOnLoan} />
+        <KPICard title="Perdidos" value={totalLost} subtitle="requiere atención" />
       </div>
 
       <div className="table-container">
@@ -60,11 +47,7 @@ export default async function Report5Page() {
           <tbody>
             {inventoryData.map((cat: any) => (
               <tr key={cat.category}>
-                <td>
-                  <span className="badge">
-                    {cat.category}
-                  </span>
-                </td>
+                <td><span className="badge">{cat.category}</span></td>
                 <td className="text-center">{cat.total_copies}</td>
                 <td className="text-center">{cat.available}</td>
                 <td className="text-center">{cat.on_loan}</td>

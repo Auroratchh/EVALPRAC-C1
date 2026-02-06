@@ -24,23 +24,10 @@ export default async function Report4Page() {
       </div>
 
       <div className="kpi-grid">
-        <KPICard 
-          title="Miembros Activos" 
-          value={totalMembers} 
-        />
-        <KPICard 
-          title="Total Préstamos" 
-          value={totalLoans} 
-        />
-        <KPICard 
-          title="Miembros Excelentes" 
-          value={excellentMembers} 
-          subtitle="sin atrasos"
-        />
-        <KPICard 
-          title="Tasa Promedio Atraso" 
-          value={`${avgOverdueRate}%`} 
-        />
+        <KPICard title="Miembros Activos" value={totalMembers} />
+        <KPICard title="Total Préstamos" value={totalLoans} />
+        <KPICard title="Miembros Excelentes" value={excellentMembers} subtitle="sin atrasos" />
+        <KPICard title="Tasa Promedio Atraso" value={`${avgOverdueRate}%`} />
       </div>
 
       <div className="table-container">
@@ -64,11 +51,7 @@ export default async function Report4Page() {
               <tr key={member.id}>
                 <td>{member.name}</td>
                 <td>{member.email}</td>
-                <td>
-                  <span className="badge">
-                    {member.member_type}
-                  </span>
-                </td>
+                <td><span className="badge">{member.member_type}</span></td>
                 <td className="text-center">{member.total_loans}</td>
                 <td className="text-center">{member.overdue_loans}</td>
                 <td className="text-center">{parseFloat(member.overdue_rate).toFixed(1)}%</td>

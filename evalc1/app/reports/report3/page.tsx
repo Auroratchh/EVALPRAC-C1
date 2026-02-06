@@ -59,22 +59,10 @@ export default async function Report3Page({
       </form>
 
       <div className="kpi-grid">
-        <KPICard 
-          title="Total Multas" 
-          value={totalFines} 
-        />
-        <KPICard 
-          title="Monto Total" 
-          value={`$${totalAmount.toFixed(2)}`} 
-        />
-        <KPICard 
-          title="Pagado" 
-          value={`$${totalPaid.toFixed(2)}`} 
-        />
-        <KPICard 
-          title="Pendiente" 
-          value={`$${totalPending.toFixed(2)}`} 
-        />
+        <KPICard title="Total Multas" value={totalFines} />
+        <KPICard title="Monto Total" value={`$${totalAmount.toFixed(2)}`} />
+        <KPICard title="Pagado" value={`$${totalPaid.toFixed(2)}`} />
+        <KPICard title="Pendiente" value={`$${totalPending.toFixed(2)}`} />
       </div>
 
       <div className="table-container">
@@ -97,18 +85,10 @@ export default async function Report3Page({
               <tr key={m.month}>
                 <td>{m.month}</td>
                 <td className="text-center">{m.total_fines}</td>
-                <td className="text-right">
-                  ${Number(m.total_amount).toFixed(2)}
-                </td>
-                <td className="text-right">
-                  ${Number(m.paid_amount).toFixed(2)}
-                </td>
-                <td className="text-right">
-                  ${Number(m.pending_amount).toFixed(2)}
-                </td>
-                <td className="text-center">
-                  {Number(m.payment_rate).toFixed(1)}%
-                </td>
+                <td className="text-right">${Number(m.total_amount).toFixed(2)}</td>
+                <td className="text-right">${Number(m.paid_amount).toFixed(2)}</td>
+                <td className="text-right">${Number(m.pending_amount).toFixed(2)}</td>
+                <td className="text-center">{Number(m.payment_rate).toFixed(1)}%</td>
               </tr>
             ))}
           </tbody>
