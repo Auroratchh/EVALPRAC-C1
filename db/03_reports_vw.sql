@@ -25,26 +25,33 @@ GROUP BY b.id, b.title, b.author, b.category;
 -- VERIFY: SELECT * FROM vw_overdue_loans;
 
 CREATE OR REPLACE VIEW vw_overdue_loans AS
+WITH overdue_calculations AS (
+    SELECT 
+        l.id AS loan_id,
+        l.member_id,
+        l.due_at,
+        l.returned_at,
+        c.book_id,
+        CASE 
+            WHEN l.returned_at IS NULL THEN EXTRACT(DAY FROM (CURRENT_TIMESTAMP - l.due_at))
+            ELSE EXTRACT(DAY FROM (l.returned_at - l.due_at))
+        END::INTEGER AS days_overdue
+    FROM loans l
+    JOIN copies c ON l.copy_id = c.id
+    WHERE (l.returned_at IS NULL AND l.due_at < CURRENT_TIMESTAMP)
+       OR (l.returned_at IS NOT NULL AND l.returned_at > l.due_at)
+)
 SELECT 
     m.id AS member_id,
     m.name AS member_name,
-    l.id AS loan_id,
-    b.title AS title,
-    l.due_at,
-    CASE 
-        WHEN l.returned_at IS NULL THEN EXTRACT(DAY FROM (CURRENT_TIMESTAMP - l.due_at))
-        ELSE EXTRACT(DAY FROM (l.returned_at - l.due_at))
-    END::INTEGER AS days_overdue,
-    ((CASE 
-        WHEN l.returned_at IS NULL THEN EXTRACT(DAY FROM (CURRENT_TIMESTAMP - l.due_at))
-        ELSE EXTRACT(DAY FROM (l.returned_at - l.due_at))
-    END) * 50)::DECIMAL(10,2) AS suggested_fine
-FROM loans l
-JOIN members m ON l.member_id = m.id
-JOIN copies c ON l.copy_id = c.id
-JOIN books b ON c.book_id = b.id
-WHERE (l.returned_at IS NULL AND l.due_at < CURRENT_TIMESTAMP)
-   OR (l.returned_at IS NOT NULL AND l.returned_at > l.due_at);
+    oc.loan_id,
+    b.title,
+    oc.due_at,
+    oc.days_overdue,
+    (oc.days_overdue * 50)::DECIMAL(10,2) AS suggested_fine
+FROM overdue_calculations oc
+JOIN members m ON oc.member_id = m.id
+JOIN books b ON oc.book_id = b.id;
 
 -- VISTA 3
 -- Devuelve: Total de multas pagadas y pendientes por mes
@@ -64,9 +71,9 @@ SELECT
         ELSE 0 
     END AS payment_rate
 FROM loans l
-GROUP BY TO_CHAR(l.due_at, 'YYYY-MM');
-
-GRANT SELECT ON vw_fines_summary TO user_nuevo;
+GROUP BY TO_CHAR(l.due_at, 'YYYY-MM')
+HAVING COUNT(l.id) > 0 
+ORDER BY month DESC;
 
 
 -- VIEW 4
