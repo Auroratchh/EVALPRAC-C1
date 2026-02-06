@@ -2,147 +2,102 @@ import KPICard from '../../report-card';
 import { pool } from '@/lib/db';
 import Link from 'next/link';
 
-async function getOverdueData(page: number, minDays?: number) {
+interface OverdueRow {
+  member_id: number;
+  member_name: string;
+  loan_id: number;
+  title: string;
+  due_at: Date;
+  days_overdue: number;
+  suggested_fine: number;
+}
+
+async function getOverdueData(page: number, minDays?: string) {
   const limit = 10;
-  const offset = (page - 1) * limit;
-  
+  const offset = (Math.max(1, page) - 1) * limit;
+  const days = parseInt(minDays || '0') || 0;
   let query = 'SELECT * FROM vw_overdue_loans';
+  let countQuery = 'SELECT COUNT(*) FROM vw_overdue_loans';
   const params: any[] = [];
-  
-  if (minDays) {
-    query += ' WHERE avg_days_overdue >= $1';
-    params.push(minDays);
-    query += ` LIMIT $2 OFFSET $3`;
-    params.push(limit, offset);
-  } else {
-    query += ` LIMIT $1 OFFSET $2`;
-    params.push(limit, offset);
+  if (days > 0) {
+    query += ` WHERE days_overdue >= $1`;
+    countQuery += ` WHERE days_overdue >= $1`;
+    params.push(days);
   }
-  
-  const result = await pool.query(query, params);
-  
-  const countQuery = minDays 
-    ? 'SELECT COUNT(*) FROM vw_overdue_loans WHERE avg_days_overdue >= $1'
-    : 'SELECT COUNT(*) FROM vw_overdue_loans';
-  const countParams = minDays ? [minDays] : [];
-  const countResult = await pool.query(countQuery, countParams);
-  const total = parseInt(countResult.rows[0].count);
-  
-  return { rows: result.rows, total };
+  const nextIdx = params.length + 1;
+  query += ` ORDER BY days_overdue DESC LIMIT $${nextIdx} OFFSET $${nextIdx + 1}`;
+  params.push(limit, offset);
+  const result = await pool.query<OverdueRow>(query, params);
+  const countResult = await pool.query(countQuery, days > 0 ? [days] : []);
+  return { rows: result.rows, total: parseInt(countResult.rows[0].count) };
 }
 
 export default async function Report2Page({
   searchParams,
 }: {
-  searchParams: { page?: string; min_days?: string };
+  searchParams: Promise<{ page?: string; min_days?: string }>;
 }) {
-  const page = parseInt(searchParams.page || '1');
-  const minDays = searchParams.min_days ? parseInt(searchParams.min_days) : undefined;
-  
-  const { rows: overdueData, total } = await getOverdueData(page, minDays);
+  const params = await searchParams;
+  const page = parseInt(params.page || '1') || 1;
+  const minDays = params.min_days || '';
+  const { rows: overdue, total } = await getOverdueData(page, minDays);
   const totalPages = Math.ceil(total / 10);
-  
-  const totalMembers = overdueData.length;
-  const totalOverdue = overdueData.reduce((sum: number, member: any) => 
-    sum + Number(member.total_overdue), 0
-  );
-  const totalFines = overdueData.reduce((sum: number, member: any) => 
-    sum + Number(member.total_suggested_fine), 0
-  ).toFixed(2);
-  const criticalMembers = overdueData.filter((m: any) => 
-    m.risk_level === 'Crítico'
-  ).length;
 
   return (
     <div>
       <div className="header">
         <h1>Reporte 2: Préstamos Vencidos</h1>
-        <p>Análisis de atrasos por socio</p>
+        <p>Listado de socios con libros pendientes de entrega</p>
       </div>
 
-      <form className="filter-container" method="get">
-        <input
-          type="number"
-          name="min_days"
-          defaultValue={minDays}
-          className="search-input"
-          placeholder="Días mínimos de atraso"
-          min="0"
-        />
-        <button type="submit" className="btn-primary">
-          Filtrar
-        </button>
-        <Link href="/reports/report2" className="btn-primary">
-          Ver Todos
-        </Link>
+      <form className="filter-container" method="get" action="/reports/report2">
+        <label>Días mínimos de atraso: </label>
+        <input type="number" name="min_days" defaultValue={minDays} className="search-input" style={{ width: '80px', margin: '0 10px' }} />
+        <button type="submit" className="btn-primary">Filtrar</button>
+        <Link href="/reports/report2" className="btn-primary" style={{ marginLeft: '5px' }}>Limpiar</Link>
       </form>
 
       <div className="kpi-grid">
-        <KPICard title="Usuarios con Atrasos" value={totalMembers} />
-        <KPICard title="Préstamos Vencidos" value={totalOverdue} />
-        <KPICard title="Multas Sugeridas" value={`$${totalFines}`} />
-        <KPICard title="Casos Críticos" value={criticalMembers} subtitle="más de 30 días" />
+        <KPICard title="Total Vencidos" value={total} />
+        <KPICard title="Máximo Atraso" value={`${overdue.length > 0 ? Math.max(0, overdue[0].days_overdue) : 0} días`} />
       </div>
 
       <div className="table-container">
-        <div className="table-header">
-          <h2>Usuarios con Préstamos Vencidos</h2>
-        </div>
         <table>
-          <thead>  
+          <thead>
             <tr>
               <th>Usuario</th>
-              <th className="text-center">Total Vencidos</th>
-              <th className="text-center">Promedio Días</th>
-              <th className="text-right">Multa Sugerida</th>
-              <th className="text-center">Nivel Riesgo</th>
+              <th>Libro</th>
+              <th className="text-center">Días Atraso</th>
+              <th className="text-center">Multa Sugerida</th>
             </tr>
           </thead>
           <tbody>
-            {overdueData.map((member: any) => (
-              <tr key={member.member_id}>
-                <td>{member.member_name}</td>
-                <td className="text-center">{member.total_overdue}</td>
+            {overdue.map((row, idx) => (
+              <tr key={`${row.loan_id}-${idx}`}>
+                <td>{row.member_name}</td>
+                <td>{row.title || 'Libro no encontrado'}</td>
                 <td className="text-center">
-                  {Number(member.avg_days_overdue).toFixed(1)}
+                   <span>{Math.max(0, row.days_overdue)}</span>
                 </td>
-                <td className="text-right">
-                  ${Number(member.total_suggested_fine).toFixed(2)}
-                </td>
-                <td className="text-center">
-                  <span className={`badge ${
-                    member.risk_level === 'Crítico' ? 'badge-critical' :
-                    member.risk_level === 'Alto' ? 'badge-high' :
-                    'badge-moderate'
-                  }`}>
-                    {member.risk_level}
-                  </span>
-                </td>
+                <td className="text-center">${Math.max(0, Number(row.suggested_fine))}</td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
 
-      <div className="pagination">
-        {page > 1 && (
-          <Link 
-            href={`/reports/report2?page=${page - 1}${minDays ? `&min_days=${minDays}` : ''}`}
-            className="nav-link"
-          >
-            Anterior
-          </Link>
-        )}
-        <span className="page-number">Página {page} de {totalPages}</span>
-        {page < totalPages && (
-          <Link 
-            href={`/reports/report2?page=${page + 1}${minDays ? `&min_days=${minDays}` : ''}`}
-            className="nav-link"
-          >
-            Siguiente
-          </Link>
-        )}
-      </div>
+      {totalPages > 1 && (
+        <div className="pagination">
+          {page > 1 && (
+            <Link href={`/reports/report2?page=${page - 1}${minDays ? `&min_days=${minDays}` : ''}`} className="nav-link">Anterior</Link>
+          )}
+          <span className="page-number">Página {page} de {totalPages}</span>
+          {page < totalPages && (
+            <Link href={`/reports/report2?page=${page + 1}${minDays ? `&min_days=${minDays}` : ''}`} className="nav-link">Siguiente</Link>
+          )}
+        </div>
+      )}
     </div>
   );
 }

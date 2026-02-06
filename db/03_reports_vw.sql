@@ -14,51 +14,37 @@ SELECT
     COUNT(l.id) AS total_loans,
     RANK() OVER (ORDER BY COUNT(l.id) DESC) AS rank_position
 FROM books b
-JOIN copies c ON b.id = c.book_id
+LEFT JOIN copies c ON b.id = c.book_id
 LEFT JOIN loans l ON c.id = l.copy_id
-GROUP BY b.id, b.title, b.author, b.category
-ORDER BY total_loans DESC;
+GROUP BY b.id, b.title, b.author, b.category;
 
 
 -- VIEW 2
 -- Devuelve: Resumen de prestamos vencidos
--- Grain: Un registro miembros por pretamos vencidos
--- VERIFY: SELECT * FROM vw_overdue_loans WHERE total_overdue > 0;
+-- Grain: Un registro por miembros con pretamos vencidos
+-- VERIFY: SELECT * FROM vw_overdue_loans;
 
 CREATE OR REPLACE VIEW vw_overdue_loans AS
-WITH overdue AS (
-    SELECT 
-        m.id AS member_id,
-        m.name AS member_name,
-        l.id AS loan_id,
-        b.title,
-        CASE 
-            WHEN l.returned_at IS NULL THEN CURRENT_TIMESTAMP
-            ELSE l.returned_at
-        END AS calc_date,
-        l.due_at
-    FROM loans l
-    JOIN members m ON l.member_id = m.id
-    JOIN copies c ON l.copy_id = c.id
-    JOIN books b ON c.book_id = b.id
-    WHERE l.due_at < CURRENT_TIMESTAMP
-)
 SELECT 
-    member_id,
-    member_name,
-    COUNT(loan_id) AS total_overdue,
-    AVG(EXTRACT(DAY FROM (calc_date - due_at))) AS avg_days_overdue,
-    SUM(EXTRACT(DAY FROM (calc_date - due_at)) * 50) AS total_suggested_fine,
+    m.id AS member_id,
+    m.name AS member_name,
+    l.id AS loan_id,
+    b.title AS title,
+    l.due_at,
     CASE 
-        WHEN AVG(EXTRACT(DAY FROM (calc_date - due_at))) > 30 THEN 'Crítico'
-        WHEN AVG(EXTRACT(DAY FROM (calc_date - due_at))) > 7 THEN 'Alto'
-        ELSE 'Moderado'
-    END AS risk_level
-FROM overdue
-GROUP BY member_id, member_name
-HAVING COUNT(loan_id) > 0
-ORDER BY total_suggested_fine DESC;
-
+        WHEN l.returned_at IS NULL THEN EXTRACT(DAY FROM (CURRENT_TIMESTAMP - l.due_at))
+        ELSE EXTRACT(DAY FROM (l.returned_at - l.due_at))
+    END::INTEGER AS days_overdue,
+    ((CASE 
+        WHEN l.returned_at IS NULL THEN EXTRACT(DAY FROM (CURRENT_TIMESTAMP - l.due_at))
+        ELSE EXTRACT(DAY FROM (l.returned_at - l.due_at))
+    END) * 50)::DECIMAL(10,2) AS suggested_fine
+FROM loans l
+JOIN members m ON l.member_id = m.id
+JOIN copies c ON l.copy_id = c.id
+JOIN books b ON c.book_id = b.id
+WHERE (l.returned_at IS NULL AND l.due_at < CURRENT_TIMESTAMP)
+   OR (l.returned_at IS NOT NULL AND l.returned_at > l.due_at);
 
 -- VISTA 3
 -- Devuelve: Total de multas pagadas y pendientes por mes
@@ -67,21 +53,20 @@ ORDER BY total_suggested_fine DESC;
 
 CREATE OR REPLACE VIEW vw_fines_summary AS
 SELECT 
-    TO_CHAR(l.loaned_at, 'YYYY-MM') AS month,
-    COUNT(f.id) AS total_fines,
-    SUM(f.amount) AS total_amount,
-    COALESCE(SUM(CASE WHEN f.paid_at IS NOT NULL THEN f.amount ELSE 0 END), 0) AS paid_amount,
-    COALESCE(SUM(CASE WHEN f.paid_at IS NULL THEN f.amount ELSE 0 END), 0) AS pending_amount,
-    ROUND(
-        COALESCE(SUM(CASE WHEN f.paid_at IS NOT NULL THEN f.amount ELSE 0 END), 0) * 100.0 
-        / NULLIF(SUM(f.amount), 0), 
-        2
-    ) AS payment_rate
-FROM fines f
-JOIN loans l ON f.loan_id = l.id
-GROUP BY TO_CHAR(l.loaned_at, 'YYYY-MM')
-HAVING COUNT(f.id) > 0
-ORDER BY month DESC;
+    TO_CHAR(l.due_at, 'YYYY-MM') AS month,
+    COUNT(l.id) AS total_fines,
+    SUM(CASE WHEN l.returned_at > l.due_at OR (l.returned_at IS NULL AND l.due_at < CURRENT_TIMESTAMP) THEN 50 ELSE 0 END) AS total_amount,
+    SUM(CASE WHEN l.returned_at IS NOT NULL THEN 50 ELSE 0 END) AS paid_amount,
+    SUM(CASE WHEN l.returned_at IS NULL AND l.due_at < CURRENT_TIMESTAMP THEN 50 ELSE 0 END) AS pending_amount,
+    CASE 
+        WHEN SUM(CASE WHEN l.due_at < CURRENT_TIMESTAMP THEN 50 ELSE 0 END) > 0 
+        THEN (SUM(CASE WHEN l.returned_at IS NOT NULL THEN 50 ELSE 0 END) * 100.0 / NULLIF(SUM(CASE WHEN l.due_at < CURRENT_TIMESTAMP THEN 50 ELSE 0 END), 0))
+        ELSE 0 
+    END AS payment_rate
+FROM loans l
+GROUP BY TO_CHAR(l.due_at, 'YYYY-MM');
+
+GRANT SELECT ON vw_fines_summary TO user_nuevo;
 
 
 -- VIEW 4

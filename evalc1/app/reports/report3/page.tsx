@@ -20,19 +20,16 @@ async function getFinesData(month?: string) {
 export default async function Report3Page({
   searchParams,
 }: {
-  searchParams: { month?: string };
+  searchParams: Promise<{ month?: string }>;
 }) {
-  const finesData = await getFinesData(searchParams.month);
+  const params = await searchParams;
+  const currentMonth = params.month || '';
   
-  const totalFines = finesData.reduce((sum: number, m: any) => 
-    sum + Number(m.total_fines), 0
-  );
-  const totalAmount = finesData.reduce((sum: number, m: any) => 
-    sum + Number(m.total_amount), 0
-  );
-  const totalPaid = finesData.reduce((sum: number, m: any) => 
-    sum + Number(m.paid_amount), 0
-  );
+  const finesData = await getFinesData(currentMonth);
+  
+  const totalFines = finesData.reduce((sum: number, m: any) => sum + Number(m.total_fines), 0);
+  const totalAmount = finesData.reduce((sum: number, m: any) => sum + Number(m.total_amount), 0);
+  const totalPaid = finesData.reduce((sum: number, m: any) => sum + Number(m.paid_amount), 0);
   const totalPending = totalAmount - totalPaid;
 
   return (
@@ -46,14 +43,13 @@ export default async function Report3Page({
         <input
           type="month"
           name="month"
-          defaultValue={searchParams.month}
+          defaultValue={currentMonth}
           className="search-input"
-          placeholder="Filtrar por mes"
         />
-        <button type="submit" className="btn-primary">
+        <button type="submit" className="btn-primary" style={{ marginLeft: '10px' }}>
           Filtrar
         </button>
-        <Link href="/reports/report3" className="btn-primary">
+        <Link href="/reports/report3" className="btn-primary" style={{ marginLeft: '10px' }}>
           Ver Todos
         </Link>
       </form>
@@ -66,9 +62,6 @@ export default async function Report3Page({
       </div>
 
       <div className="table-container">
-        <div className="table-header">
-          <h2>Multas por Mes</h2>
-        </div>
         <table>
           <thead>
             <tr>

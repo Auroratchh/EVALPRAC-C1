@@ -3,7 +3,8 @@ INSERT INTO members (name, email, member_type) VALUES
     ('Tadeo', 'correodetadeo@correomx', 'activo'),
     ('Mateo', 'correodemateo@correomx', 'inactivo'),
     ('Lucas', 'correodelucas@correomx', 'regular'),
-    ('Marcos', 'correodemarcos@correomx', 'regular');
+    ('Marcos', 'correodemarcos@correomx', 'regular'),
+    ('Eliseo', 'correodeeliseo@correomx', 'regular'),
 
 
 INSERT INTO books (title, author, category, isbn) VALUES
@@ -21,14 +22,20 @@ INSERT INTO copies (book_id, barcode, status) VALUES
     (5, 'BC-005', 'disponible'),
     (3, 'BC-006', 'disponible'); 
 
-
 INSERT INTO loans (copy_id, member_id, loaned_at, due_at, returned_at) VALUES
-    (2, 1, '2025-01-01 10:02:00', '2025-01-15 10:04:00', '2025-01-14 09:38:39'),
-    (3, 2, '2025-01-05 11:00:34', '2025-01-20 11:20:00', NULL),                
-    (6, 4, '2025-01-10 12:02:00', '2025-01-25 12:00:50', NULL),                
-    (1, 5, '2025-02-01 09:10:30', '2025-02-15 09:04:28', '2025-02-20 09:54:26');
+    (1, 1, '2024-11-01', '2024-11-10', NULL),
+    (2, 2, '2024-11-05', '2024-11-15', NULL),
+    (3, 3, '2024-11-10', '2024-11-20', NULL),
+    (5, 4, '2024-11-12', '2024-11-22', NULL),
+    (6, 5, '2024-11-15', '2024-11-25', NULL),
+    (1, 6, '2024-11-20', '2024-11-30', NULL),
+    (2, 1, '2024-12-01', '2024-12-10', NULL),
+    (3, 2, '2024-12-05', '2024-12-15', NULL),
+    (5, 3, '2024-12-10', '2024-12-20', NULL),
+    (6, 4, '2024-12-15', '2024-12-25', NULL);
 
 INSERT INTO fines (loan_id, amount, paid_at) VALUES
-    (4, 800.00, '2024-02-21 10:12:54'),
-    (2, 200.00, NULL),                 
-    (3, 500.00, NULL);
+    (4, 250.00, '2025-02-06 10:12:54'), 
+    (2, 1000.00, NULL),                  
+    (3, 750.00, NULL),                    
+    (5, 1750.00, NULL);
