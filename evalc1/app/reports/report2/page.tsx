@@ -9,13 +9,12 @@ async function getOverdueData() {
 export default async function Report2Page() {
   const overdueData = await getOverdueData();
   
- 
   const totalMembers = overdueData.length;
   const totalOverdue = overdueData.reduce((sum: number, member: any) => 
-    sum + member.total_overdue, 0
+    sum + Number(member.total_overdue), 0
   );
   const totalFines = overdueData.reduce((sum: number, member: any) => 
-    sum + parseFloat(member.total_suggested_fine), 0
+    sum + Number(member.total_suggested_fine), 0
   ).toFixed(2);
   const criticalMembers = overdueData.filter((m: any) => 
     m.risk_level === 'Crítico'
@@ -68,10 +67,10 @@ export default async function Report2Page() {
                 <td>{member.member_name}</td>
                 <td className="text-center">{member.total_overdue}</td>
                 <td className="text-center">
-                  {parseFloat(member.avg_days_overdue).toFixed(1)}
+                  {Number(member.avg_days_overdue).toFixed(1)}
                 </td>
                 <td className="text-right">
-                  ${parseFloat(member.total_suggested_fine).toFixed(2)}
+                  ${Number(member.total_suggested_fine).toFixed(2)}
                 </td>
                 <td className="text-center">
                   <span className={`badge ${

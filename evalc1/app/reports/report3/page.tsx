@@ -25,13 +25,13 @@ export default async function Report3Page({
   const finesData = await getFinesData(searchParams.month);
   
   const totalFines = finesData.reduce((sum: number, m: any) => 
-    sum + parseInt(m.total_fines), 0
+    sum + Number(m.total_fines), 0
   );
   const totalAmount = finesData.reduce((sum: number, m: any) => 
-    sum + parseFloat(m.total_amount), 0
+    sum + Number(m.total_amount), 0
   );
   const totalPaid = finesData.reduce((sum: number, m: any) => 
-    sum + parseFloat(m.paid_amount), 0
+    sum + Number(m.paid_amount), 0
   );
   const totalPending = totalAmount - totalPaid;
 
@@ -98,16 +98,16 @@ export default async function Report3Page({
                 <td>{m.month}</td>
                 <td className="text-center">{m.total_fines}</td>
                 <td className="text-right">
-                  ${parseFloat(m.total_amount).toFixed(2)}
+                  ${Number(m.total_amount).toFixed(2)}
                 </td>
                 <td className="text-right">
-                  ${parseFloat(m.paid_amount).toFixed(2)}
+                  ${Number(m.paid_amount).toFixed(2)}
                 </td>
                 <td className="text-right">
-                  ${parseFloat(m.pending_amount).toFixed(2)}
+                  ${Number(m.pending_amount).toFixed(2)}
                 </td>
                 <td className="text-center">
-                  {parseFloat(m.payment_rate).toFixed(1)}%
+                  {Number(m.payment_rate).toFixed(1)}%
                 </td>
               </tr>
             ))}
