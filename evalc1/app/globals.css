@@ -233,3 +233,25 @@ tr:hover {
   padding: 5px 15px;
   border-radius: 20px;
 }
+
+.badge-critical {
+  background: #dc2626;
+  color: white;
+}
+
+.badge-high {
+  background: #f59e0b;
+  color: white;
+}
+
+.badge-moderate {
+  background: #10b981;
+  color: white;
+}
+
+input[type="month"] {
+  padding: 10px 15px;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  font-family: inherit;
+}

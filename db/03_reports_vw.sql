@@ -21,23 +21,22 @@ ORDER BY total_loans DESC;
 
 
 -- VIEW 2
--- Devuelve: Prestamos no devueltos a tiempo con dias de atraso
--- Grain: Un registro por prestamo vencido
--- VERIFY: SELECT * FROM vw_overdue_loans WHERE days_overdue > 5;
+-- Devuelve: Resumen de prestamos vencidos
+-- Grain: Un registro miembros por pretamos vencidos
+-- VERIFY: SELECT * FROM vw_overdue_loans WHERE total_overdue > 0;
 
 CREATE OR REPLACE VIEW vw_overdue_loans AS
 WITH overdue AS (
     SELECT 
-        l.id,
+        m.id AS member_id,
         m.name AS member_name,
-        b.title AS book_title,
-        l.loaned_at,
-        l.due_at,
-        l.returned_at,
+        l.id AS loan_id,
+        b.title,
         CASE 
             WHEN l.returned_at IS NULL THEN CURRENT_TIMESTAMP
             ELSE l.returned_at
-        END AS calc_date
+        END AS calc_date,
+        l.due_at
     FROM loans l
     JOIN members m ON l.member_id = m.id
     JOIN copies c ON l.copy_id = c.id
@@ -45,19 +44,20 @@ WITH overdue AS (
     WHERE l.due_at < CURRENT_TIMESTAMP
 )
 SELECT 
-    id,
+    member_id,
     member_name,
-    book_title,
-    loaned_at,
-    due_at,
-    returned_at,
-    EXTRACT(DAY FROM (calc_date - due_at))::INTEGER AS days_overdue,
-    EXTRACT(DAY FROM (calc_date - due_at))::INTEGER * 50 AS suggested_fine,
+    COUNT(loan_id) AS total_overdue,
+    AVG(EXTRACT(DAY FROM (calc_date - due_at))) AS avg_days_overdue,
+    SUM(EXTRACT(DAY FROM (calc_date - due_at)) * 50) AS total_suggested_fine,
     CASE 
-        WHEN returned_at IS NULL THEN 'Pendiente'
-        ELSE 'Devuelto tarde'
-    END AS status
-FROM overdue;
+        WHEN AVG(EXTRACT(DAY FROM (calc_date - due_at))) > 30 THEN 'Crítico'
+        WHEN AVG(EXTRACT(DAY FROM (calc_date - due_at))) > 7 THEN 'Alto'
+        ELSE 'Moderado'
+    END AS risk_level
+FROM overdue
+GROUP BY member_id, member_name
+HAVING COUNT(loan_id) > 0
+ORDER BY total_suggested_fine DESC;
 
 
 -- VISTA 3
@@ -85,8 +85,8 @@ ORDER BY month DESC;
 
 
 -- VIEW 4
--- Devuelve: Estadisticas de prestamos y atrasos por socio
--- Grain: Un registro por socio activo
+-- Devuelve: Estadisticas de prestamos y atrasos por usuario
+-- Grain: Un registro por usuario activo
 -- VERIFY: 
 -- SELECT * FROM vw_member_activity;
 
