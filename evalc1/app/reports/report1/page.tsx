@@ -62,7 +62,10 @@ export default async function Report1Page({
       <div className="header">
         <h1>Reporte 1: Libros Más Prestados</h1>
         <p>Ranking basado en el historial de préstamos</p>
+        <Link href='/'>Volver</Link>
       </div>
+
+      
 
       <form className="filter-container" method="get" action="/reports/report1">
         <input

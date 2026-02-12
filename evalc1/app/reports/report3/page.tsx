@@ -37,6 +37,7 @@ export default async function Report3Page({
       <div className="header">
         <h1>Reporte 3: Resumen de Multas</h1>
         <p>Multas pagadas y pendientes por mes</p>
+        <Link href='/'>Volver</Link>
       </div>
 
       <form className="filter-container" method="get">

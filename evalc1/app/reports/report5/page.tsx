@@ -1,5 +1,6 @@
 import KPICard from '../../report-card';
 import { pool } from '@/lib/db';
+import Link from 'next/link';
 
 async function getInventoryHealth() {
   const result = await pool.query('SELECT * FROM vw_inventory_health');
@@ -19,6 +20,7 @@ export default async function Report5Page() {
       <div className="header">
         <h1>Reporte 5: Salud de Inventario</h1>
         <p>Disponibilidad de copias por categoría</p>
+        <Link href='/'>Volver</Link>
       </div>
 
       <div className="kpi-grid">

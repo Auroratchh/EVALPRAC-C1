@@ -47,7 +47,8 @@ export default async function Report2Page({
     <div>
       <div className="header">
         <h1>Reporte 2: Préstamos Vencidos</h1>
-        <p>Listado de socios con libros pendientes de entrega</p>
+        <p>Listado de usuarios con libros pendientes de entrega</p>
+        <Link href='/'>Volver</Link>
       </div>
 
       <form className="filter-container" method="get" action="/reports/report2">

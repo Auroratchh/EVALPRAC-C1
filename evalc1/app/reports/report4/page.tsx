@@ -1,5 +1,6 @@
 import KPICard from '../../report-card';
 import { pool } from '@/lib/db';
+import Link from 'next/link';
 
 async function getMemberActivity() {
   const result = await pool.query('SELECT * FROM vw_member_activity');
@@ -21,6 +22,7 @@ export default async function Report4Page() {
       <div className="header">
         <h1>Reporte 4: Actividad de Miembros</h1>
         <p>Estadísticas de préstamos y atrasos por usuario</p>
+        <Link href='/'>Volver</Link>
       </div>
 
       <div className="kpi-grid">
