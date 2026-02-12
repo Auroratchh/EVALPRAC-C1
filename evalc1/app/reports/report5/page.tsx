@@ -1,19 +1,14 @@
 import KPICard from '../../report-card';
-import { pool } from '@/lib/db';
+import { getInventoryHealth } from '@/lib/queries';
 import Link from 'next/link';
-
-async function getInventoryHealth() {
-  const result = await pool.query('SELECT * FROM vw_inventory_health');
-  return result.rows;
-}
 
 export default async function Report5Page() {
   const inventoryData = await getInventoryHealth();
   
-  const totalCopies = inventoryData.reduce((sum: number, cat: any) => sum + parseInt(cat.total_copies), 0);
-  const totalAvailable = inventoryData.reduce((sum: number, cat: any) => sum + parseInt(cat.available), 0);
-  const totalOnLoan = inventoryData.reduce((sum: number, cat: any) => sum + parseInt(cat.on_loan), 0);
-  const totalLost = inventoryData.reduce((sum: number, cat: any) => sum + parseInt(cat.lost), 0);
+  const totalCopies = inventoryData.reduce((sum, cat) => sum + parseInt(String(cat.total_copies)), 0);
+  const totalAvailable = inventoryData.reduce((sum, cat) => sum + parseInt(String(cat.available)), 0);
+  const totalOnLoan = inventoryData.reduce((sum, cat) => sum + parseInt(String(cat.on_loan)), 0);
+  const totalLost = inventoryData.reduce((sum, cat) => sum + parseInt(String(cat.lost)), 0);
 
   return (
     <div>
@@ -27,7 +22,7 @@ export default async function Report5Page() {
         <KPICard title="Total Copias" value={totalCopies} />
         <KPICard title="Disponibles" value={totalAvailable} />
         <KPICard title="En Préstamo" value={totalOnLoan} />
-        <KPICard title="Perdidos" value={totalLost} subtitle="requiere atención" />
+        <KPICard title="Perdidos" value={totalLost} />
       </div>
 
       <div className="table-container">
@@ -47,14 +42,14 @@ export default async function Report5Page() {
             </tr>
           </thead>
           <tbody>
-            {inventoryData.map((cat: any) => (
+            {inventoryData.map((cat) => (
               <tr key={cat.category}>
                 <td><span className="badge">{cat.category}</span></td>
                 <td className="text-center">{cat.total_copies}</td>
                 <td className="text-center">{cat.available}</td>
                 <td className="text-center">{cat.on_loan}</td>
                 <td className="text-center">{cat.lost}</td>
-                <td className="text-center">{parseFloat(cat.availability_percent).toFixed(1)}%</td>
+                <td className="text-center">{parseFloat(String(cat.availability_percent)).toFixed(1)}%</td>
                 <td className="text-center">
                   <span className={`badge ${
                     cat.health_status === 'Bueno' ? 'badge-moderate' :

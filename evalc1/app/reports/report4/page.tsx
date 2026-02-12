@@ -1,20 +1,15 @@
 import KPICard from '../../report-card';
-import { pool } from '@/lib/db';
+import { getMemberActivity } from '@/lib/queries';
 import Link from 'next/link';
-
-async function getMemberActivity() {
-  const result = await pool.query('SELECT * FROM vw_member_activity');
-  return result.rows;
-}
 
 export default async function Report4Page() {
   const membersData = await getMemberActivity();
   
   const totalMembers = membersData.length;
-  const excellentMembers = membersData.filter((m: any) => m.status === 'Excelente').length;
-  const totalLoans = membersData.reduce((sum: number, m: any) => sum + parseInt(m.total_loans), 0);
+  const excellentMembers = membersData.filter(m => m.status === 'Excelente').length;
+  const totalLoans = membersData.reduce((sum, m) => sum + parseInt(String(m.total_loans)), 0);
   const avgOverdueRate = totalMembers > 0 
-    ? (membersData.reduce((sum: number, m: any) => sum + parseFloat(m.overdue_rate), 0) / totalMembers).toFixed(1)
+    ? (membersData.reduce((sum, m) => sum + parseFloat(String(m.overdue_rate)), 0) / totalMembers).toFixed(1)
     : '0';
 
   return (
@@ -49,14 +44,14 @@ export default async function Report4Page() {
             </tr>
           </thead>
           <tbody>
-            {membersData.map((member: any) => (
+            {membersData.map((member) => (
               <tr key={member.id}>
                 <td>{member.name}</td>
                 <td>{member.email}</td>
                 <td><span className="badge">{member.member_type}</span></td>
                 <td className="text-center">{member.total_loans}</td>
                 <td className="text-center">{member.overdue_loans}</td>
-                <td className="text-center">{parseFloat(member.overdue_rate).toFixed(1)}%</td>
+                <td className="text-center">{parseFloat(String(member.overdue_rate)).toFixed(1)}%</td>
                 <td className="text-center">
                   <span className={`badge ${
                     member.status === 'Excelente' ? 'badge-moderate' :

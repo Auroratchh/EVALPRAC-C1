@@ -1,21 +1,6 @@
 import KPICard from '../../report-card';
-import { pool } from '@/lib/db';
+import { getFinesData } from '@/lib/queries';
 import Link from 'next/link';
-
-async function getFinesData(month?: string) {
-  let query = 'SELECT * FROM vw_fines_summary';
-  const params: string[] = [];
-  
-  if (month) {
-    query += ' WHERE month = $1';
-    params.push(month);
-  }
-  
-  query += ' ORDER BY month DESC';
-  
-  const result = await pool.query(query, params);
-  return result.rows;
-}
 
 export default async function Report3Page({
   searchParams,
@@ -27,9 +12,9 @@ export default async function Report3Page({
   
   const finesData = await getFinesData(currentMonth);
   
-  const totalFines = finesData.reduce((sum: number, m: any) => sum + Number(m.total_fines), 0);
-  const totalAmount = finesData.reduce((sum: number, m: any) => sum + Number(m.total_amount), 0);
-  const totalPaid = finesData.reduce((sum: number, m: any) => sum + Number(m.paid_amount), 0);
+  const totalFines = finesData.reduce((sum, m) => sum + Number(m.total_fines), 0);
+  const totalAmount = finesData.reduce((sum, m) => sum + Number(m.total_amount), 0);
+  const totalPaid = finesData.reduce((sum, m) => sum + Number(m.paid_amount), 0);
   const totalPending = totalAmount - totalPaid;
 
   return (
@@ -75,7 +60,7 @@ export default async function Report3Page({
             </tr>
           </thead>
           <tbody>
-            {finesData.map((m: any) => (
+            {finesData.map((m) => (
               <tr key={m.month}>
                 <td>{m.month}</td>
                 <td className="text-center">{m.total_fines}</td>
